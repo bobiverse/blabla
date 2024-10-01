@@ -31,27 +31,14 @@ plural.demo:
 The `^` in a YAML file copies the text from the translation key. The key can either be used as the final text or as a unique token for translations below.
 
 ```yaml
-hello:
-  en: Hello
-  lv: Sveiki
 
 params:
   en: "1=%d, 2=%0.2f 3=%s"
   lv: "1=%d, 2=%0.2f 3=%s"
 
-plural.demo:
-  en:
-    - One item
-    - "%d items"
-  lv: 
-    - Viena lieta
-    - "%d lietas"
-
 Same English text from Key:
   en: ^
   lv: Tas pats teksts no key
-
-
 
 # Include additional translation files
 include:
