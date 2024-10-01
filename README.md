@@ -6,10 +6,12 @@ It simplifies managing multilingual content in both Go code and templates, suppo
 This package is motivated by the need for a quick and simple translation solution, designed for easy integration into existing Go projects, using YAML as a straightforward and flexible source for translations.
 
 
-
-
 ## Translation YAML file
+
 **YAML**-based translation file format for easy management.
+
+The `^` in a YAML file copies the text from the translation key. The key can either be used as the final text or as a unique token for translations below.
+
 
 ```yaml
 hello:
