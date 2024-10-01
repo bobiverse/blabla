@@ -12,7 +12,7 @@ plural.demo:
 
 Same English text from Key:
   en: ^
-  lv: Taspats teksts no key
+  lv: Tas pats teksts no key
 
 params:
   en: "1=%d, 2=%0.2f 3=%s"

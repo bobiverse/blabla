@@ -25,7 +25,7 @@ func TestBasic(t *testing.T) {
 		{"lv", "sub3.hello", "Sub3 Sveiki", nil},
 
 		{"en", "Same English text from Key", "Same English text from Key", nil},
-		{"lv", "Same English text from Key", "Taspats teksts no key", nil},
+		{"lv", "Same English text from Key", "Tas pats teksts no key", nil},
 
 		{"en", "params", "1=1, 2=2.02 3=three", []any{1, 2.02, "three"}}, // test default case
 

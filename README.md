@@ -32,7 +32,7 @@ plural.demo:
 
 Same English text from Key:
   en: ^
-  lv: Taspats teksts no key
+  lv: Tas pats teksts no key
 
 
 
