@@ -27,7 +27,8 @@ plural.demo:
 
 <details>
   <summary>YAML with all features (plural options, format params, includes)</summary>
-
+  
+<br/>
 The `^` in a YAML file copies the text from the translation key. The key can either be used as the final text or as a unique token for translations below.
 
 ```yaml
