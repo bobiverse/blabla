@@ -1,6 +1,6 @@
 # blabla
 
-**blabla** is a lightweight and efficient translation package for Golang applications. 
+**blabla** is a lightweight translation package. 
 It simplifies managing multilingual content in both Go code and templates, supporting YAML-based translation files and dynamic language switching.
 
 
