@@ -18,6 +18,10 @@ hello:
   en: Hello
   lv: Sveiki
 
+params:
+  en: "1=%d, 2=%0.2f 3=%s"
+  lv: "1=%d, 2=%0.2f 3=%s"
+
 plural.demo:
   en:
     - One item
@@ -29,6 +33,8 @@ plural.demo:
 Same English text from Key:
   en: ^
   lv: Taspats teksts no key
+
+
 
 # Include additional translation files
 include:
@@ -49,9 +55,13 @@ import (
 func main() {
     blabla.MustLoad("translations.yml") // panics if there's an error
     
-    fmt.Println(blabla.Get("lv", "hello")) // Outputs: "Sveiki"
-    fmt.Println(blabla.Get("en", "Same English text from Key")) // Outputs: "Same English text from Key"
-    fmt.Println(blabla.Get("lv", "plural.demo", []any{5})) // Outputs: "5 items"
+    lang := "lv"
+
+    s := blabla.Get(lang, "hello") // Outputs: "Sveiki"
+    s = blabla.Get(lang, "params", 1, 2.02, "three") // Outputs: "1=1, 2=2.02 3=three"
+    s = blabla.Get(lang, "plural.demo", []any{5}) // Outputs: "5 items"
+    
+    s = blabla.Get("en", "Same English text from Key") // Outputs: "Same English text from Key"
 }
 ```
 
