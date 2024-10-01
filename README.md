@@ -84,3 +84,10 @@ func (user *User) T(s string) string {
 ```
 
 This will output the translation based on the active language.
+
+
+## Roadmap
+
+- [ ] **Implement advanced pluralization logic**  
+  Enhance the pluralization logic to support language-specific rules. For example, in **Latvian**, numbers like `1` and `21` use the singular form (`lieta`), while `5` and `22` use the plural form (`lietas`), and numbers like `10` and `15` use a different genitive plural form (`lietu`). Similarly, **Icelandic** uses a singular form for `1`, dual forms for `2-4`, and a plural form for `5` and above. This logic should cover edge cases across all supported languages.
+
