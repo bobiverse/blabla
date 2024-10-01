@@ -1,0 +1,5 @@
+
+hello:
+  en: Hello
+  # lv: Sveiki -- this missing language will result in validation error
+

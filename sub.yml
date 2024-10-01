@@ -1,0 +1,6 @@
+sub.hello:
+  en: Sub Hello
+  lv: Sub Sveiki
+
+include:
+  sub3: sub3.yml

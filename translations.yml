@@ -1,0 +1,20 @@
+hello:
+  en: Hello
+  lv: Sveiki
+
+plural.demo:
+  en:
+    - One item
+    - "%d items"
+  LV:
+    - Viena lieta
+    - "%d lietas"
+
+Same English text from Key:
+  en: ^
+  lv: Taspats teksts no key
+
+# Include another translations
+include:
+  sub: sub.yml
+  sub2: sub3.yml

@@ -1,0 +1,7 @@
+sub3.hello:
+  en: Sub3 Hello
+  lv: Sub3 Sveiki
+
+# include:
+#   main: translations.yml
+
