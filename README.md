@@ -3,6 +3,8 @@
 **blabla** is a lightweight translation package. 
 It simplifies managing multilingual content in both Go code and templates, supporting YAML-based translation files and dynamic language switching.
 
+This package is motivated by the need for a quick and simple translation solution, designed for easy integration into existing Go projects, using YAML as a straightforward and flexible source for translations.
+
 
 
 
