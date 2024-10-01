@@ -49,7 +49,7 @@ package main
 
 import (
     "fmt"
-    "blabla"
+    "github.com/bobiverse/blabla"
 )
 
 func main() {
@@ -72,7 +72,7 @@ You can also use the translation function directly inside Golang templates:
 
 ```go
 template.FuncMap{
-    "T":      blabla.Get,
+    "T":      bla.Get, // global `bla`
     // ...
 }
 ```
@@ -90,7 +90,7 @@ type User struct {
 }
 
 func (user *User) T(s string) string {
-    return blabla.Get(user.Lang, s)
+    return bla.Get(user.Lang, s) // global `bla`
 }
 ```
 
