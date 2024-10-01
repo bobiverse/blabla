@@ -10,8 +10,25 @@ This package is motivated by the need for a quick and simple translation solutio
 
 **YAML**-based translation file format for easy management.
 
-The `^` in a YAML file copies the text from the translation key. The key can either be used as the final text or as a unique token for translations below.
 
+```yaml
+hello:
+  en: Hello
+  lv: Sveiki
+
+plural.demo:
+  en:
+    - One item
+    - "%d items"
+  lv: 
+    - Viena lieta
+    - "%d lietas"
+```
+
+<details>
+  <summary>YAML with all features (plural options, format params, includes)</summary>
+
+The `^` in a YAML file copies the text from the translation key. The key can either be used as the final text or as a unique token for translations below.
 
 ```yaml
 hello:
@@ -41,6 +58,7 @@ include:
   sub: sub.yml
   sub2: sub3.yml
 ```
+</details>
 
 ## Load translations
 
