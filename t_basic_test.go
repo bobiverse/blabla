@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestGeneric(t *testing.T) {
+func TestBasic(t *testing.T) {
 
 	// Define test cases
 	testCases := []struct {
