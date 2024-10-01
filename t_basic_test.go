@@ -28,6 +28,8 @@ func TestGeneric(t *testing.T) {
 		{"lv", "Same English text from Key", "Taspats teksts no key", nil},
 
 		{"en", "EMPTY", "(en.EMPTY)", nil}, // test default case
+
+		{"en", "params", "1=1, 2=2.02 3=three", []any{1, 2.02, "three"}}, // test default case
 	}
 
 	bla := MustLoad("tests/translations.yml")
