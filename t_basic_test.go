@@ -30,7 +30,7 @@ func TestGeneric(t *testing.T) {
 		{"en", "EMPTY", "(en.EMPTY)", nil}, // test default case
 	}
 
-	bla := MustLoad("translations.yml")
+	bla := MustLoad("tests/translations.yml")
 
 	if bla.Errors != nil {
 		t.Fatalf("Validation errors: %s", errors.Join(bla.Errors...))

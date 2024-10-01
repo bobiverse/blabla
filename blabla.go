@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 
@@ -48,14 +49,16 @@ func Load(fname string) (*BlaBla, error) {
 
 		// include another file
 		if key == keywordInclude {
+			basedir := filepath.Dir(fname)
 			for _, fsubnames := range langs {
 				if len(fsubnames) == 0 {
 					continue
 				}
 
-				fsubname := fsubnames[0]
+				fsubname := filepath.Join(basedir, fsubnames[0])
 
 				// fmt.Printf("- INCLUDE: %s %v\n", key, fsubname)
+
 				subbla, err2 := Load(fsubname)
 				if err2 != nil {
 					log.Printf("Error: include failed: %s", err2)
