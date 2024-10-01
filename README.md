@@ -53,15 +53,16 @@ import (
 )
 
 func main() {
-    blabla.MustLoad("translations.yml") // panics if there's an error
+    bla := blabla.MustLoad("translations.yml") // panics if there's an error
+    // bla, err := blabla.Load("..") // no panics
     
     lang := "lv"
 
-    s := blabla.Get(lang, "hello") // Outputs: "Sveiki"
-    s = blabla.Get(lang, "params", 1, 2.02, "three") // Outputs: "1=1, 2=2.02 3=three"
-    s = blabla.Get(lang, "plural.demo", 5) // Outputs: "5 items"
+    s := bla.Get(lang, "hello") // Outputs: "Sveiki"
+    s = bla.Get(lang, "params", 1, 2.02, "three") // Outputs: "1=1, 2=2.02 3=three"
+    s = bla.Get(lang, "plural.demo", 5) // Outputs: "5 items"
     
-    s = blabla.Get("en", "Same English text from Key") // Outputs: "Same English text from Key"
+    s = bla.Get("en", "Same English text from Key") // Outputs: "Same English text from Key"
 }
 ```
 
