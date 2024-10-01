@@ -59,7 +59,7 @@ func main() {
 
     s := blabla.Get(lang, "hello") // Outputs: "Sveiki"
     s = blabla.Get(lang, "params", 1, 2.02, "three") // Outputs: "1=1, 2=2.02 3=three"
-    s = blabla.Get(lang, "plural.demo", []any{5}) // Outputs: "5 items"
+    s = blabla.Get(lang, "plural.demo", 5) // Outputs: "5 items"
     
     s = blabla.Get("en", "Same English text from Key") // Outputs: "Same English text from Key"
 }
