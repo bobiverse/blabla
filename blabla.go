@@ -157,6 +157,8 @@ func (bla *BlaBla) Validate() []error {
 func (bla *BlaBla) get(lang, key string, index int, v ...any) string {
 	lang = strings.ToLower(lang)
 
+	log.Printf("PARAMS: %v", v)
+
 	if fn, _ := bla.languages[lang]; fn != nil {
 		return fn(bla.raw[key][lang][index], v...)
 	}
