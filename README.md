@@ -57,8 +57,8 @@ You can also use the translation function directly inside Golang templates:
 
 ```go
 template.FuncMap{
-		"T":      blabla.Get,
-        // ...
+    "T":      blabla.Get,
+    // ...
 }
 ```
 
