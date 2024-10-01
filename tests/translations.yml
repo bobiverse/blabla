@@ -18,6 +18,20 @@ params:
   en: "1=%d, 2=%0.2f 3=%s"
   lv: "1=%d, 2=%0.2f 3=%s"
 
+# Note: While including multiline strings in YAML is supported,
+# for longer texts it's better to use a template with if...else structures.
+haiku:
+  en: |
+    An old silent pond
+    A frog jumps into the pond—
+    Splash! Silence again.
+
+  lv: |
+    Vecs kluss dīķis
+    Varde ielēc dīķī iekšā—
+    Šļakatas! Klusums.
+
+
 # Include another translations
 include:
   sub: sub.yml

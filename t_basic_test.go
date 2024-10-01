@@ -31,6 +31,7 @@ func TestBasic(t *testing.T) {
 
 		{"en", "EMPTY", "(en.EMPTY)", nil}, // test default case
 
+		{"en", "haiku", "An old silent pond\nA frog jumps into the pond—\nSplash! Silence again.\n", nil}, // note `\n` nee lines
 	}
 
 	bla := MustLoad("tests/translations.yml")
