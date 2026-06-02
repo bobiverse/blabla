@@ -3,12 +3,12 @@ package blabla
 import (
 	"fmt"
 	"log"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
-
-	"golang.org/x/exp/maps"
 
 	"gopkg.in/yaml.v3"
 )
@@ -69,9 +69,7 @@ func Load(fname string) (*BlaBla, error) {
 					log.Printf("Error: include failed: %s", err2)
 					continue
 				}
-				for key2, langs2 := range subbla.raw {
-					bla.raw[key2] = langs2
-				}
+				maps.Copy(bla.raw, subbla.raw)
 			}
 			delete(bla.raw, key)
 			continue
@@ -118,7 +116,7 @@ func (bla *BlaBla) String() string {
 	s := "\n"
 
 	s += strings.Repeat("-", 10) + "\n"
-	s += fmt.Sprintf("Languages:\t %d %v\n", len(bla.languages), maps.Keys(bla.languages))
+	s += fmt.Sprintf("Languages:\t %d %v\n", len(bla.languages), slices.Sorted(maps.Keys(bla.languages)))
 	s += fmt.Sprintf("Translations:\t %d\n", len(bla.raw))
 	s += fmt.Sprintf("Errors:\t %d\n", len(bla.Errors))
 	s += strings.Repeat("-", 10) + "\n"
@@ -133,10 +131,6 @@ func (bla *BlaBla) Validate() []error {
 	// collect language keys
 	for _, langs := range bla.raw {
 		for lang := range langs {
-			lang = strings.ToLower(lang)
-			if _, is := langcounts[lang]; !is {
-				langcounts[lang] = 0
-			}
 			langcounts[lang]++
 		}
 	}
@@ -145,7 +139,6 @@ func (bla *BlaBla) Validate() []error {
 	bla.Errors = nil
 	for key, langs := range bla.raw {
 		for lang := range langcounts {
-			lang = strings.ToLower(lang)
 			if _, is := langs[lang]; !is {
 				bla.Errors = append(bla.Errors, fmt.Errorf("Missing `%s` translation for `%s`", lang, key))
 			}
@@ -159,72 +152,55 @@ func (bla *BlaBla) Validate() []error {
 	return nil
 }
 
+// missingTranslation is the sentinel returned when a key/lang/index lookup misses.
+// Tests assert on this exact format — see t_basic_test.go.
+func missingTranslation(lang, key string) string {
+	return "(" + lang + "." + key + ")"
+}
+
 func (bla *BlaBla) get(lang, key string, index uint, v ...any) string {
 	lang = strings.ToLower(lang)
+	line := bla.raw[key][lang]
 
-	if fn, _ := bla.languages[lang]; fn != nil {
-		return fn(bla.raw[key][lang][index], v...)
+	if uint(len(line)) < index+1 {
+		return missingTranslation(lang, key)
+	}
+
+	if fn := bla.languages[lang]; fn != nil {
+		return fn(line[index], v...)
 	}
 
 	if len(v) > 0 {
-		return fmt.Sprintf(bla.raw[key][lang][index], v...)
+		return fmt.Sprintf(line[index], v...)
 	}
 
-	if uint(len(bla.raw[key][lang])) < index+1 {
-		return "(" + lang + "." + key + ")"
-	}
-
-	return bla.raw[key][lang][index]
+	return line[index]
 }
 
-type Number interface {
-	~int | ~int8 | ~int16 | ~int32 | ~int64 |
-		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
-		~float32 | ~float64
+// isPluralCount reports whether v looks like a numeric count > 1.
+// Uses fmt %v + ParseFloat (rather than reflect or a type switch) so it
+// stays untyped — see CLAUDE.md. This is the seam a future language-aware
+// plural-rules engine should replace.
+func isPluralCount(v any) bool {
+	s := fmt.Sprintf("%v", v)
+	n, err := strconv.ParseFloat(s, 64)
+	return err == nil && n > 1
 }
 
-func isGreaterThanOne[T Number](value T) bool {
-	return value > 1
-}
-
-// Function to convert 'any' to string, parse to float64, and check if greater than one
-func isGreaterThanOneAny(value any) bool {
-	// Convert the value to a string
-	strValue := fmt.Sprintf("%v", value)
-
-	// Parse the string to float64
-	num, err := strconv.ParseFloat(strValue, 64)
-	if err != nil {
-		// Parsing failed, return false
-		return false
-	}
-
-	// Use the isGreaterThanOne function
-	return isGreaterThanOne(num)
-}
-
-// Get translation by guessign single/plural
+// Get translation by guessing single/plural
 func (bla *BlaBla) Get(lang, key string, v ...any) string {
 	lang = strings.ToLower(lang)
 
-	// Have plural options?
-	if len(bla.raw[key][lang]) >= 2 {
-		// Check if any of the variadic arguments is numeric and greater than 1
-		for _, value := range v {
-			s := fmt.Sprintf("%v", value)     // ingenous method to not use reflect and
-			n, _ := strconv.ParseFloat(s, 64) // get number out of `any` :shrug:
-			if n > 1 {
-				return bla.GetPlural(lang, key, v...)
-			}
-		}
+	if len(bla.raw[key][lang]) >= 2 && slices.ContainsFunc(v, isPluralCount) {
+		return bla.get(lang, key, NMany, v...)
 	}
 
 	return bla.get(lang, key, NSingle, v...)
 }
 
-// GetSingle translation forced to be single
+// GetSingle translation forced to be singular
 func (bla *BlaBla) GetSingle(lang, key string, v ...any) string {
-	return bla.get(lang, key, 0, v...) // plural
+	return bla.get(lang, key, NSingle, v...)
 }
 
 // GetPlural translation forced to be plural
@@ -232,10 +208,10 @@ func (bla *BlaBla) GetPlural(lang, key string, v ...any) string {
 	lang = strings.ToLower(lang)
 
 	if len(bla.raw[key][lang]) < 2 {
-		return "(" + lang + "." + key + ")"
+		return missingTranslation(lang, key)
 	}
 
-	return bla.get(lang, key, NMany, v...) // plural
+	return bla.get(lang, key, NMany, v...)
 }
 
 // CustomParser ..

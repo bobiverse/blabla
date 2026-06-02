@@ -1,8 +1,5 @@
 module github.com/bobiverse/blabla
 
-go 1.23.1
+go 1.26.3
 
-require (
-	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
-	gopkg.in/yaml.v3 v3.0.1
-)
+require gopkg.in/yaml.v3 v3.0.1
