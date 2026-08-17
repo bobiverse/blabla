@@ -148,25 +148,41 @@ func TestLoadFileNotFound(t *testing.T) {
 	}
 }
 
-func TestIsPluralCount(t *testing.T) {
+func TestCountArgAndIsPluralCount(t *testing.T) {
 	cases := []struct {
-		in   any
-		want bool
+		in     []any
+		want   bool // plural?
+		noArgs bool // no numeric arg at all
 	}{
-		{0, false},
-		{1, false},
-		{2, true},
-		{1.5, true},
-		{0.5, false},
-		{-3, false},
-		{"5", true},
-		{"1", false},
-		{"abc", false},
-		{nil, false},
+		{[]any{0}, true, false},
+		{[]any{1}, false, false},
+		{[]any{2}, true, false},
+		{[]any{1.5}, true, false},
+		{[]any{0.5}, true, false},
+		{[]any{-3}, true, false},
+		{[]any{"5"}, true, false},
+		{[]any{"1"}, false, false},
+		{[]any{"abc"}, false, true},
+		{[]any{nil}, false, true},
+		{nil, false, true},
+
+		// only the FIRST numeric arg counts; the rest are format params
+		{[]any{1, 2.50}, false, false},
+		{[]any{5, 0.50}, true, false},
+		{[]any{"tag", 1, "more"}, false, false},
+		{[]any{"tag", 5}, true, false},
 	}
 	for _, c := range cases {
-		if got := isPluralCount(c.in); got != c.want {
-			t.Errorf("isPluralCount(%v) = %v, want %v", c.in, got, c.want)
+		n, isCount := countArg(c.in)
+		if isCount == c.noArgs {
+			t.Errorf("countArg(%v): isCount = %v, want %v", c.in, isCount, !c.noArgs)
+			continue
+		}
+		if !isCount {
+			continue
+		}
+		if got := isPluralCount(n); got != c.want {
+			t.Errorf("countArg(%v) = %v; isPluralCount = %v, want %v", c.in, n, got, c.want)
 		}
 	}
 }
@@ -267,18 +283,19 @@ func TestPluralRouting(t *testing.T) {
 		plural bool
 	}{
 		{"no args -> singular", nil, false},
-		{"int 0 -> singular", []any{0}, false},
+		{"int 0 -> plural", []any{0}, true},
 		{"int 1 -> singular", []any{1}, false},
 		{"int 2 -> plural", []any{2}, true},
-		{"negative -> singular", []any{-3}, false},
+		{"negative -> plural", []any{-3}, true},
 		{"fractional > 1 -> plural", []any{1.5}, true},
-		{"fractional <= 1 -> singular", []any{0.5}, false},
+		{"fractional < 1 -> plural", []any{0.5}, true},
 		{"non-numeric -> singular", []any{"banana"}, false},
 		{"numeric string > 1 -> plural", []any{"5"}, true},
 		{"numeric string == 1 -> singular", []any{"1"}, false},
 		{"nil arg -> singular", []any{nil}, false},
-		{"mixed: numeric > 1 anywhere triggers plural", []any{"tag", 5}, true},
-		{"mixed: all non-plural stay singular", []any{"tag", 1, "more"}, false},
+		{"mixed: first numeric arg decides, plural", []any{"tag", 5}, true},
+		{"mixed: first numeric arg decides, singular", []any{"tag", 1, "more"}, false},
+		{"later numeric params do not hijack the count", []any{1, 2.50}, false},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
