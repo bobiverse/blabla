@@ -83,8 +83,15 @@ func load(fname string, chain map[string]bool) (*BlaBla, error) {
 			}
 			lang = _lang
 
-			if len(trline) > 0 && trline[0] == keywordSameAsKey {
-				trline[0] = key
+			if len(trline.list) > 0 && trline.list[0] == keywordSameAsKey {
+				trline.list[0] = key
+			}
+
+			// `^` in a mapping applies per form, not just at index 0.
+			for cat, text := range trline.byCat {
+				if text == keywordSameAsKey {
+					trline.byCat[cat] = key
+				}
 			}
 
 			if _, isAlready := bla.languages[lang]; !isAlready {
@@ -102,7 +109,7 @@ func load(fname string, chain map[string]bool) (*BlaBla, error) {
 // translation key resolve the same way on every run.
 func (bla *BlaBla) loadIncludes(basedir string, subnamesByKey map[string]translationLines, chain map[string]bool) {
 	for _, subkey := range slices.Sorted(maps.Keys(subnamesByKey)) {
-		for _, fsubname := range subnamesByKey[subkey] {
+		for _, fsubname := range subnamesByKey[subkey].list {
 			subbla, err := load(filepath.Join(basedir, fsubname), chain)
 			if err != nil {
 				log.Printf("Error: include failed: %s", err)
@@ -183,19 +190,55 @@ func (bla *BlaBla) get(lang, key string, index uint, v ...any) string {
 	lang = strings.ToLower(lang)
 	line := bla.raw[key][lang]
 
-	if uint(len(line)) < index+1 {
+	if uint(len(line.list)) < index+1 {
 		return missingTranslation(lang, key)
 	}
 
+	return bla.format(lang, line.list[index], v...)
+}
+
+// format applies the language's custom parser, or the fmt verbs, to one line.
+func (bla *BlaBla) format(lang, text string, v ...any) string {
 	if fn := bla.languages[lang]; fn != nil {
-		return fn(line[index], v...)
+		return fn(text, v...)
 	}
 
-	if len(v) > 0 && hasFormatVerb(line[index]) {
-		return fmt.Sprintf(line[index], v...)
+	if len(v) > 0 && hasFormatVerb(text) {
+		return fmt.Sprintf(text, v...)
 	}
 
-	return line[index]
+	return text
+}
+
+// getCategory is the base for every category-aware lookup.
+//
+// `fallback` is on only for Get: there the category was inferred from a count,
+// so landing on `other` beats a sentinel. A forced getter passes it off --
+// the caller named an exact form, and quietly returning a different one is a
+// mistake nobody can see in the output.
+func (bla *BlaBla) getCategory(lang, key string, cat category, fallback bool, v ...any) string {
+	lang = strings.ToLower(lang)
+	line := bla.raw[key][lang]
+
+	text, isThere := line.byCat[cat]
+	if !isThere && fallback {
+		text, isThere = line.byCat[catOther]
+	}
+	if !isThere {
+		return missingTranslation(lang, key)
+	}
+
+	return bla.format(lang, text, v...)
+}
+
+// categoryFor resolves the count in v to a category for lang.
+func categoryFor(lang string, v []any) category {
+	op, isCount := countOperands(v)
+	if !isCount {
+		return catOne // no count -> singular, same as the legacy path
+	}
+
+	return patternFor(lang).fn(op)
 }
 
 // hasFormatVerb reports whether s contains a fmt verb (`%d`, `%s`, ..).
@@ -236,11 +279,17 @@ func isPluralCount(n float64) bool {
 	return n != 1
 }
 
-// Get translation by guessing single/plural
+// Get translation by guessing the plural form from the count
 func (bla *BlaBla) Get(lang, key string, v ...any) string {
 	lang = strings.ToLower(lang)
 
-	if len(bla.raw[key][lang]) >= 2 {
+	// Only a mapping block uses the CLDR rules. A scalar or a sequence keeps
+	// the legacy `n != 1` routing, so no existing file changes its output.
+	if bla.raw[key][lang].hasCategories() {
+		return bla.getCategory(lang, key, categoryFor(lang, v), true, v...)
+	}
+
+	if len(bla.raw[key][lang].list) >= 2 {
 		if n, isCount := countArg(v); isCount && isPluralCount(n) {
 			return bla.get(lang, key, NMany, v...)
 		}
@@ -251,6 +300,10 @@ func (bla *BlaBla) Get(lang, key string, v ...any) string {
 
 // GetSingle translation forced to be singular
 func (bla *BlaBla) GetSingle(lang, key string, v ...any) string {
+	if bla.raw[key][strings.ToLower(lang)].hasCategories() {
+		return bla.getCategory(lang, key, catOne, false, v...)
+	}
+
 	return bla.get(lang, key, NSingle, v...)
 }
 
@@ -258,11 +311,35 @@ func (bla *BlaBla) GetSingle(lang, key string, v ...any) string {
 func (bla *BlaBla) GetPlural(lang, key string, v ...any) string {
 	lang = strings.ToLower(lang)
 
-	if len(bla.raw[key][lang]) < 2 {
+	if bla.raw[key][lang].hasCategories() {
+		return bla.getCategory(lang, key, catOther, false, v...)
+	}
+
+	if len(bla.raw[key][lang].list) < 2 {
 		return missingTranslation(lang, key)
 	}
 
 	return bla.get(lang, key, NMany, v...)
+}
+
+// GetZero translation forced to the `zero` form
+func (bla *BlaBla) GetZero(lang, key string, v ...any) string {
+	return bla.getCategory(lang, key, catZero, false, v...)
+}
+
+// GetTwo translation forced to the `two` form
+func (bla *BlaBla) GetTwo(lang, key string, v ...any) string {
+	return bla.getCategory(lang, key, catTwo, false, v...)
+}
+
+// GetFew translation forced to the `few` form
+func (bla *BlaBla) GetFew(lang, key string, v ...any) string {
+	return bla.getCategory(lang, key, catFew, false, v...)
+}
+
+// GetMany translation forced to the `many` form
+func (bla *BlaBla) GetMany(lang, key string, v ...any) string {
+	return bla.getCategory(lang, key, catMany, false, v...)
 }
 
 // CustomParser ..
