@@ -33,10 +33,27 @@ type BlaBla struct {
 
 // Load ..
 func Load(fname string) (*BlaBla, error) {
+	return load(fname, map[string]bool{})
+}
+
+// load is the base loader. `chain` holds the absolute paths of the files
+// currently being loaded, so a file that includes an ancestor is rejected
+// instead of recursing until the stack overflows.
+func load(fname string, chain map[string]bool) (*BlaBla, error) {
 	bla := &BlaBla{
 		raw:       map[string]map[string]translationLines{},
 		languages: map[string]func(str string, v ...any) string{},
 	}
+
+	abspath, err := filepath.Abs(fname)
+	if err != nil {
+		return nil, fmt.Errorf("resolving path `%s`: %v", fname, err)
+	}
+	if chain[abspath] {
+		return nil, fmt.Errorf("circular include of `%s`", abspath)
+	}
+	chain[abspath] = true
+	defer delete(chain, abspath) // siblings may include the same file, ancestors may not
 
 	data, err := os.ReadFile(fname)
 	if err != nil {
@@ -49,31 +66,9 @@ func Load(fname string) (*BlaBla, error) {
 		return nil, fmt.Errorf("parsing YAML `%s` file: %v", fname, err)
 	}
 
-	// structure/prepare data
-	for key, langs := range bla.raw {
-
-		// include another file
-		if key == keywordInclude {
-			basedir := filepath.Dir(fname)
-			for _, fsubnames := range langs {
-				if len(fsubnames) == 0 {
-					continue
-				}
-
-				fsubname := filepath.Join(basedir, fsubnames[0])
-
-				// fmt.Printf("- INCLUDE: %s %v\n", key, fsubname)
-
-				subbla, err2 := Load(fsubname)
-				if err2 != nil {
-					log.Printf("Error: include failed: %s", err2)
-					continue
-				}
-				maps.Copy(bla.raw, subbla.raw)
-			}
-			delete(bla.raw, key)
-			continue
-		}
+	if subnamesByKey, isInclude := bla.raw[keywordInclude]; isInclude {
+		delete(bla.raw, keywordInclude)
+		bla.loadIncludes(filepath.Dir(fname), subnamesByKey, chain)
 	}
 
 	// collect translations
@@ -100,6 +95,32 @@ func Load(fname string) (*BlaBla, error) {
 
 	bla.Validate()
 	return bla, nil
+}
+
+// loadIncludes merges every file listed under the `include:` key.
+// Include keys are visited in sorted order so two includes defining the same
+// translation key resolve the same way on every run.
+func (bla *BlaBla) loadIncludes(basedir string, subnamesByKey map[string]translationLines, chain map[string]bool) {
+	for _, subkey := range slices.Sorted(maps.Keys(subnamesByKey)) {
+		for _, fsubname := range subnamesByKey[subkey] {
+			subbla, err := load(filepath.Join(basedir, fsubname), chain)
+			if err != nil {
+				log.Printf("Error: include failed: %s", err)
+				continue
+			}
+			bla.mergeMissing(subbla.raw)
+		}
+	}
+}
+
+// mergeMissing adds translations that this file does not define itself.
+// The including file always wins over the files it includes.
+func (bla *BlaBla) mergeMissing(raw map[string]map[string]translationLines) {
+	for key, langs := range raw {
+		if _, isAlready := bla.raw[key]; !isAlready {
+			bla.raw[key] = langs
+		}
+	}
 }
 
 // MustLoad finds and parse without errors
@@ -170,29 +191,59 @@ func (bla *BlaBla) get(lang, key string, index uint, v ...any) string {
 		return fn(line[index], v...)
 	}
 
-	if len(v) > 0 {
+	if len(v) > 0 && hasFormatVerb(line[index]) {
 		return fmt.Sprintf(line[index], v...)
 	}
 
 	return line[index]
 }
 
-// isPluralCount reports whether v looks like a numeric count > 1.
-// Uses fmt %v + ParseFloat (rather than reflect or a type switch) so it
-// stays untyped — see CLAUDE.md. This is the seam a future language-aware
-// plural-rules engine should replace.
-func isPluralCount(v any) bool {
-	s := fmt.Sprintf("%v", v)
-	n, err := strconv.ParseFloat(s, 64)
-	return err == nil && n > 1
+// hasFormatVerb reports whether s contains a fmt verb (`%d`, `%s`, ..).
+// A singular form usually has none ("One item"), and Sprintf would then
+// append `%!(EXTRA ..)` to it — so such lines are returned untouched.
+func hasFormatVerb(s string) bool {
+	for i := 0; i < len(s)-1; i++ {
+		if s[i] != '%' {
+			continue
+		}
+		if s[i+1] == '%' {
+			i++ // escaped literal `%%`
+			continue
+		}
+		return true
+	}
+	return false
+}
+
+// countArg returns the first numeric argument — the count that decides
+// singular vs plural. Later numbers are format params (a price, an id) and
+// must not hijack the choice. Uses fmt %v + ParseFloat (rather than reflect
+// or a type switch) so it stays untyped — see CLAUDE.md.
+func countArg(v []any) (float64, bool) {
+	for _, arg := range v {
+		n, err := strconv.ParseFloat(fmt.Sprintf("%v", arg), 64)
+		if err == nil {
+			return n, true
+		}
+	}
+	return 0, false
+}
+
+// isPluralCount reports whether count n needs the plural form.
+// Everything but exactly 1 is plural (0 items, -3 items, 0.5 items).
+// This is the seam a future language-aware plural-rules engine should replace.
+func isPluralCount(n float64) bool {
+	return n != 1
 }
 
 // Get translation by guessing single/plural
 func (bla *BlaBla) Get(lang, key string, v ...any) string {
 	lang = strings.ToLower(lang)
 
-	if len(bla.raw[key][lang]) >= 2 && slices.ContainsFunc(v, isPluralCount) {
-		return bla.get(lang, key, NMany, v...)
+	if len(bla.raw[key][lang]) >= 2 {
+		if n, isCount := countArg(v); isCount && isPluralCount(n) {
+			return bla.get(lang, key, NMany, v...)
+		}
 	}
 
 	return bla.get(lang, key, NSingle, v...)
