@@ -119,6 +119,12 @@ func (bla *BlaBla) mergeMissing(raw map[string]map[string]translationLines) {
 	for key, langs := range raw {
 		if _, isAlready := bla.raw[key]; !isAlready {
 			bla.raw[key] = langs
+			continue
+		}
+		for lang, trline := range langs {
+			if _, isAlready := bla.raw[key][lang]; !isAlready {
+				bla.raw[key][lang] = trline
+			}
 		}
 	}
 }
