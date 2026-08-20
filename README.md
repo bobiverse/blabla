@@ -121,8 +121,9 @@ named:
 > not "when the count is 0". In the older sequence form the first line is the
 > singular, so `0:` and the first list entry are *not* the same thing.
 
-Language keys are **ISO 639-1 codes** (`et` is Estonian, `uk` is Ukrainian) — not
-country codes, which differ (`EE` is Estonia, `UA` is Ukraine).
+Language keys are [ISO 639 language codes](https://www.loc.gov/standards/iso639-2/php/code_list.php)
+— two letters where one exists (`et` Estonian, `uk` Ukrainian), three otherwise
+(`hsb` Upper Sorbian) — never ISO 3166 country codes.
 
 A category the file does not define falls back to `other`, then to the
 `(lang.key)` sentinel. The forced getters — `GetZero`, `GetSingle`, `GetTwo`,
