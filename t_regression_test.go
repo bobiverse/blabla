@@ -70,25 +70,23 @@ func TestBugCircularIncludeMustNotCrash(t *testing.T) {
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Errorf("circular include crashed the process (%v); Load must detect the cycle and return.\n%s",
-			err, firstLines(string(out), 6))
+			err, lastLines(string(out), 6))
 	}
 }
 
-// firstLines keeps the head, not the tail: a stack overflow prints the reason
-// and the first frames up front, then repeats the same frames for thousands of
-// lines. The head is the diagnostic.
-func firstLines(s string, n int) string {
+func lastLines(s string, n int) string {
+	if n <= 0 {
+		return ""
+	}
 	lines := strings.Split(strings.TrimRight(s, "\n"), "\n")
 	if len(lines) > n {
-		lines = lines[:n]
+		lines = lines[len(lines)-n:]
 	}
 	return strings.Join(lines, "\n")
 }
 
 // BUG 3 (MEDIUM): plural is picked if ANY variadic arg parses as > 1, so a
 // price or an id hijacks the form choice from the actual count.
-// NOTE: conflicts with t_basic_test.go TestPluralRouting
-// "mixed: numeric > 1 anywhere triggers plural", which freezes today's behavior.
 func TestBugPluralMustFollowCountNotAnyNumericArg(t *testing.T) {
 	dir := t.TempDir()
 	path := writeYAML(t, dir, "cart.yml",
@@ -128,6 +126,25 @@ func TestBugIncludeMustNotOverrideParentKeys(t *testing.T) {
 	}
 }
 
+func TestBugIncludeMustMergeMissingLanguagesForExistingKey(t *testing.T) {
+	dir := t.TempDir()
+	writeYAML(t, dir, "sub.yml", "greeting:\n  lv: no-override\n")
+	path := writeYAML(t, dir, "parent.yml",
+		"greeting:\n  en: from-parent\ninclude:\n  sub: sub.yml\n")
+
+	bla, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := bla.Get("en", "greeting"), "from-parent"; got != want {
+		t.Errorf("expected `%s`, got `%s`", want, got)
+	}
+	if got, want := bla.Get("lv", "greeting"), "no-override"; got != want {
+		t.Errorf("missing language should be merged from include: expected `%s`, got `%s`", want, got)
+	}
+}
+
 // BUG 5 (LOW): only fsubnames[0] is used, so an include written as a YAML
 // sequence silently drops every file after the first.
 func TestBugIncludeSequenceMustLoadEveryFile(t *testing.T) {
@@ -152,8 +169,6 @@ func TestBugIncludeSequenceMustLoadEveryFile(t *testing.T) {
 
 // BUG 6 (LOW): isPluralCount requires n > 1, so a count of 0 takes the
 // singular form. English needs the plural for 0.
-// NOTE: conflicts with t_basic_test.go TestIsPluralCount {0, false} and
-// TestPluralRouting "int 0 -> singular", which freeze today's behavior.
 func TestBugZeroCountMustUsePluralForm(t *testing.T) {
 	dir := t.TempDir()
 	path := writeYAML(t, dir, "routing.yml", "count:\n  en:\n    - SINGULAR\n    - PLURAL\n")
