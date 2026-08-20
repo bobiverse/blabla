@@ -105,7 +105,7 @@ func TestPatterns(t *testing.T) {
 		{patternIcelandic, 5, catOther},
 		{patternIcelandic, 11, catOther},
 		{patternIcelandic, 21, catOne},
-		{patternIcelandic, "1.5", catOne},
+		{patternIcelandic, "1.5", catOther}, // only x.1 decimals are `one`
 
 		// Latvian: the roadmap's example
 		{patternLatvian, 0, catZero},
@@ -174,7 +174,7 @@ func TestPatterns(t *testing.T) {
 		{patternRomanian, 2, catFew},
 		{patternRomanian, 19, catFew},
 		{patternRomanian, 20, catOther},
-		{patternRomanian, 101, catOther},
+		{patternRomanian, 101, catFew}, // n != 1 and n % 100 = 1..19
 
 		// Welsh: all six categories in one language
 		{patternWelsh, 0, catZero},
