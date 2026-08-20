@@ -1,10 +1,42 @@
 package blabla
 
 import (
+	"bytes"
+	"io"
+	"log"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
+
+// TestMain silences the package logger for the whole run. A failed include is
+// logged and tolerated by design, and two tests exercise that path on purpose,
+// so their output is expected noise rather than a problem. Tests that care
+// about what was logged capture it with captureLog.
+func TestMain(m *testing.M) {
+	log.SetOutput(io.Discard)
+	code := m.Run()
+	log.SetOutput(os.Stderr)
+	os.Exit(code)
+}
+
+// captureLog redirects the standard logger into a buffer for one test and
+// restores the previous writer afterwards.
+func captureLog(t *testing.T) func() string {
+	t.Helper()
+
+	var buf bytes.Buffer
+	prev, flags := log.Writer(), log.Flags()
+	log.SetOutput(&buf)
+	log.SetFlags(0)
+	t.Cleanup(func() {
+		log.SetOutput(prev)
+		log.SetFlags(flags)
+	})
+
+	return buf.String
+}
 
 // Freezes the behavior of scalar and sequence blocks. None of it may change
 // when the CLDR engine lands: a file that does not use a mapping must take the
@@ -184,10 +216,18 @@ include:
   empty: []
 `)
 
+	logged := captureLog(t)
+
 	bla, err := Load(path)
 	if err != nil {
 		t.Fatalf("Load should tolerate a missing include: %v", err)
 	}
+
+	// The missing include must be reported, not swallowed.
+	if out := logged(); !strings.Contains(out, "nope.yml") {
+		t.Errorf("a failed include should be logged, got: %q", out)
+	}
+
 	for key, want := range map[string]string{"top": "T", "k.one": "One", "k.two": "Two"} {
 		if got := bla.Get("en", key); got != want {
 			t.Errorf("Get(en, %s) = `%s`, want `%s`", key, got, want)
