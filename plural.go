@@ -516,7 +516,7 @@ var (
 	//      or f % 10 = 2..4 and f % 100 != 12..14
 	patternCroatian = &pattern{
 		name:  "croatian",
-		langs: []string{"bs", "hr", "sh", "sr"},
+		langs: []string{"bs", "hr", "sr"}, // `sh` (Serbo-Croatian) withdrawn in 2000
 		cats:  []category{catOne, catFew, catOther},
 		fn: func(op operands) category {
 			if op.v == 0 && op.i%10 == 1 && op.i%100 != 11 {
@@ -539,7 +539,7 @@ var (
 	// few: v != 0 or n = 0 or n != 1 and n % 100 = 1..19
 	patternRomanian = &pattern{
 		name:  "romanian",
-		langs: []string{"mo", "ro"},
+		langs: []string{"ro"}, // `mo` (Moldavian) withdrawn from ISO 639-1 in 2008, merged into `ro`
 		cats:  []category{catOne, catFew, catOther},
 		fn: func(op operands) category {
 			if op.i == 1 && op.v == 0 {
@@ -697,6 +697,24 @@ var (
 		},
 	}
 
+	// one: n = 1 · two: n = 2
+	// The Sami languages of Norway, Sweden and Finland. CLDR files the
+	// non-European iu/naq/sat under this same ruleset; they are not registered.
+	patternNorthernSami = &pattern{
+		name:  "northern-sami",
+		langs: []string{"se", "sma", "smi", "smj", "smn", "sms"},
+		cats:  []category{catOne, catTwo, catOther},
+		fn: func(op operands) category {
+			switch op.n {
+			case 1:
+				return catOne
+			case 2:
+				return catTwo
+			}
+			return catOther
+		},
+	}
+
 	// zero: n = 0 · one: n = 1 · two: n = 2 · few: n = 3 · many: n = 6
 	patternWelsh = &pattern{
 		name:  "welsh",
@@ -748,6 +766,7 @@ var patterns = []*pattern{
 	patternBreton,
 	patternMaltese,
 	patternCornish,
+	patternNorthernSami,
 	patternWelsh,
 }
 

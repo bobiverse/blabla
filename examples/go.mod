@@ -1,10 +1,11 @@
 module blaexample
 
-go 1.23.1
+go 1.26.5
 
-require github.com/bobiverse/blabla v0.0.1
+require github.com/bobiverse/blabla v0.0.3
 
-require (
-	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
-)
+require gopkg.in/yaml.v3 v3.0.1 // indirect
+
+// Build against the checkout, not the published module, so the example
+// exercises the code in this repo.
+replace github.com/bobiverse/blabla => ../
