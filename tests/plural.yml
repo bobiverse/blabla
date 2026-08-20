@@ -1,0 +1,17 @@
+
+items:
+  en:                       # one, other
+    one:   "%v item"
+    other: "%v items"
+  et:                       # same rules as English for Estonian
+    one:   "%v asi"
+    other: "%v asja"
+  lv:                       # zero, one, other
+    zero:  "%v lietu"       # 0, 10-20, 30, 100, 110..
+    one:   "%v lieta"       # 1, 21, 31, 101..
+    other: "%v lietas"      # 2-9, 22-29..
+  lt:                       # one, few, many, other
+    one:   "%v daiktas"     # 1, 21, 31..
+    few:   "%v daiktai"     # 2-9, 22-29..
+    many:  "%v daikto"      # decimals only
+    other: "%v daiktų"      # 0, 10-19, 110-119..
