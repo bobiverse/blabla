@@ -21,9 +21,9 @@ func mappingBla(t *testing.T) *BlaBla {
 
 numeric:
   lv:
-    0: "%d lietu"
-    1: "%d lieta"
-    2: "%d lietas"
+    0:     "%d lietu"
+    1:     "%d lieta"
+    other: "%d lietas"
 
 mixed:
   lv:
@@ -103,6 +103,21 @@ func TestMappingNumericAliases(t *testing.T) {
 		if got := bla.Get("lv", "numeric", count); got != want {
 			t.Errorf("numeric alias, count %d = `%s`, want `%s`", count, got, want)
 		}
+	}
+}
+
+// `0` and `1` are the only numeric aliases. `2` is rejected rather than
+// quietly meaning `other` -- a reader would take it for the `two` category.
+func TestMappingRejectsNumericTwo(t *testing.T) {
+	dir := t.TempDir()
+	path := writeYAML(t, dir, "two.yml", "k:\n  lv:\n    1: ONE\n    2: OTHER\n")
+
+	_, err := Load(path)
+	if err == nil {
+		t.Fatal("`2:` should be rejected; spell `other:` instead")
+	}
+	if !strings.Contains(err.Error(), "two") {
+		t.Errorf("the error should list the valid category names, got: %v", err)
 	}
 }
 

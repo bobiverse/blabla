@@ -55,7 +55,7 @@ func (trline *translationLines) unmarshalCategories(value *yaml.Node) error {
 		key := strings.ToLower(strings.TrimSpace(keynode.Value))
 		cat, isCategory := categoryByKey[key]
 		if !isCategory {
-			return fmt.Errorf("unknown plural category `%s`: expected one of zero, one, two, few, many, other (or 0, 1, 2)", keynode.Value)
+			return fmt.Errorf("unknown plural category `%s`: expected one of zero, one, two, few, many, other (or 0, 1)", keynode.Value)
 		}
 
 		if valnode.Kind != yaml.ScalarNode {

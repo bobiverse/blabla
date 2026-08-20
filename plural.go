@@ -21,8 +21,12 @@ const (
 	catOther
 )
 
-// categoryByKey maps a YAML mapping key to its category. Numeric aliases are
-// accepted alongside the names: `0` zero, `1` one, `2` other.
+// categoryByKey maps a YAML mapping key to its category.
+//
+// `0` and `1` are accepted as short forms of `zero` and `one`. There is
+// deliberately no numeric alias for the rest: `2` would read as the `two`
+// category, and any mapping from a digit to `other` is a guess waiting to be
+// misread. Spell `two`, `few`, `many` and `other` by name.
 var categoryByKey = map[string]category{
 	"zero":  catZero,
 	"one":   catOne,
@@ -32,7 +36,6 @@ var categoryByKey = map[string]category{
 	"other": catOther,
 	"0":     catZero,
 	"1":     catOne,
-	"2":     catOther,
 }
 
 func (cat category) String() string {
