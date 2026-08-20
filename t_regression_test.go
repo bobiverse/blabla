@@ -70,11 +70,14 @@ func TestBugCircularIncludeMustNotCrash(t *testing.T) {
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Errorf("circular include crashed the process (%v); Load must detect the cycle and return.\n%s",
-			err, lastLines(string(out), 6))
+			err, firstLines(string(out), 6))
 	}
 }
 
-func lastLines(s string, n int) string {
+// firstLines keeps the head, not the tail: a stack overflow prints the reason
+// and the first frames up front, then repeats the same frames for thousands of
+// lines. The head is the diagnostic.
+func firstLines(s string, n int) string {
 	lines := strings.Split(strings.TrimRight(s, "\n"), "\n")
 	if len(lines) > n {
 		lines = lines[:n]
